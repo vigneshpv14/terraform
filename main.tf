@@ -1,6 +1,20 @@
+# Set Required Provider
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+    }
+  }
+}
+
+#configure the AWS provider
+provider "aws" {
+  region = "ap-south-1"
+}
+
 #configure VPC
 resource "aws_vpc" "VigneshVPC" {
-  cidr_block       = var.cidr
+  cidr_block       = "172.16.0.0/16"
   instance_tenancy = "default"
 
   tags = {
@@ -12,7 +26,7 @@ resource "aws_vpc" "VigneshVPC" {
 
 resource "aws_subnet" "VigneshSubnetPublic" {
   vpc_id     = aws_vpc.VigneshVPC.id
-  cidr_block = var.publiccidrblock
+  cidr_block = "172.16.1.0/24"
   availability_zone ="ap-south-1a"
   tags = {
     Name = "VigneshSubnet_Public"
@@ -22,7 +36,7 @@ resource "aws_subnet" "VigneshSubnetPublic" {
 #configure Private Subnet
 resource "aws_subnet" "VigneshSubnetPrivate" {
   vpc_id     = aws_vpc.VigneshVPC.id
-  cidr_block = var.privatecidrblock
+  cidr_block = "172.16.2.0/24"
   availability_zone ="ap-south-1b"
   tags = {
     Name = "VigneshSubnet_Private"
@@ -150,4 +164,24 @@ resource "aws_route_table" "VigneshPrivateRT" {
 resource "aws_route_table_association" "privaterouteVignesh" {
   subnet_id      = aws_subnet.VigneshSubnetPrivate.id
   route_table_id = aws_route_table.VigneshPrivateRT.id
+}
+
+# Bastion Server creation
+resource "aws_instance" "BastionTest" {
+  ami  = "ami-0a1b648e2cd533174" # Ubuntu Server 22.04 LTS (HVM), SSD Volume Type.
+  instance_type = "t2.micro"     # Free-tier eligible instance type
+  key_name      = "kubeadm"
+  vpc_security_group_ids = [aws_security_group.BastionServerAccess.id]
+  subnet_id     = aws_subnet.VigneshSubnetPublic.id
+  associate_public_ip_address = true
+}
+
+#DB Server
+# Bastion Server creation
+resource "aws_instance" "DB" {
+  ami  = "ami-0a1b648e2cd533174" # Ubuntu Server 22.04 LTS (HVM), SSD Volume Type.
+  instance_type = "t2.micro"     # Free-tier eligible instance type
+  key_name      = "kubeadm"
+  vpc_security_group_ids = [aws_security_group.DBSErver.id]
+  subnet_id     = aws_subnet.VigneshSubnetPrivate.id
 }

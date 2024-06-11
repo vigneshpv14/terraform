@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main', credentialsId: 'fb19541a-6dec-4508-9319-823c58cbc200', url: 'https://github.com/vigneshpv14/terraform.git'
             }
         }
     
@@ -18,13 +18,6 @@ pipeline {
             steps {
                 sh ('terraform plan') 
             }
-        }
-
-        stage (" Action") {
-            steps {
-                echo "Terraform action is --> ${action}"
-                sh ('terraform ${action} --auto-approve') 
-           }
         }
     }
 }
